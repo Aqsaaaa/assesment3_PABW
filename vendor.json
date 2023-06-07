@@ -1,0 +1,22 @@
+{
+  "vendors": [
+    {
+      "id": 1,
+      "nama": "Vendor A",
+      "paket": "Paket A",
+      "deskripsi": "Deskripsi Vendor A"
+    },
+    {
+      "id": 2,
+      "nama": "Vendor B",
+      "paket": "Paket B",
+      "deskripsi": "Deskripsi Vendor B"
+    },
+    {
+      "id": 3,
+      "nama": "Vendor C",
+      "paket": "Paket C",
+      "deskripsi": "Deskripsi Vendor C"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+Dalam kode ini, ada kendala saat penambahan data. Jadi saat kita ingin menambahkan data pertama kali, data tersebut tidak langsung bertambah.
+Jadi kita harus menekan tombol update kemudian cancel terlebih dahulu kemudian masukkan data ke dalam input agar bisa menambah file.

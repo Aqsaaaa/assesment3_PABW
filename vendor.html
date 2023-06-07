@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vendor Management</title>
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+  <style>
+   body {
+      font-family: Arial, sans-serif;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 16px;
+    }
+
+    input[type="submit"],
+    input[type="button"] {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover,
+    input[type="button"]:hover {
+      background-color: #45a049;
+    }
+
+    /* Gaya khusus untuk form vendor */
+    #vendorForm {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+  
+    .notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      color: #fff;
+      font-weight: bold;
+      z-index: 9999;
+    }
+  
+    .success {
+      background-color: #4CAF50;
+    }
+  
+    .error {
+      background-color: #f44336;
+    }
+  
+    .warning {
+      background-color: #ff9800;
+    }
+    
+    .editBtn,
+    .deleteBtn {
+      padding: 5px 10px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+  
+    .editBtn {
+      margin-right: 5px;
+    }
+  
+    .deleteBtn {
+      background-color: #f44336;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>Vendor Management</h1>
+  <form id="vendorForm">
+    <label for="vendorId">ID Vendor :</label>
+    <input type="text" id="vendorId" name="vendorId" required><br>
+    <label for="vendorName">Nama Vendor :</label>
+    <input type="text" id="vendorName" name="vendorName" required><br>
+    <label for="vendorPaket">Paket Vendor :</label>
+    <input type="text" id="vendorPaket" name="vendorPaket" required><br>
+    <label for="vendorDeskripsi">Deskripsi Vendor :</label>
+    <textarea type="text" id="vendorDeskripsi" name="vendorDeskripsi" required></textarea><br>
+    <input type="submit" value="Add Vendor" id="submitBtn">
+    <input type="button" value="Cancel" id="cancelBtn" style="display: none;">
+  </form>
+  <table id="vendorTable" class="display">
+    <thead>
+      <tr>
+        <th>ID Vendor</th>
+        <th>Nama Vendor</th>
+        <th>Paket Vendor</th>
+        <th>Deskripsi Vendor</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+  </table>
+
+  <script>
+    $(document).ready(function() {
+      const dataTable = $('#vendorTable').DataTable();
+
+      function showSuccessNotification(message) {
+        const notification = $('<div>', {
+          class: 'notification success',
+          text: message
+        });
+        $('body').append(notification);
+        setTimeout(function() {
+          notification.fadeOut();
+        }, 3000);
+      }
+
+      function showErrorNotification(message) {
+        const notification = $('<div>', {
+          class: 'notification error',
+          text: message
+        });
+        $('body').append(notification);
+        setTimeout(function() {
+          notification.fadeOut();
+        }, 3000);
+      }
+
+      function showWarningNotification(message) {
+        const notification = $('<div>', {
+          class: 'notification warning',
+          text: message
+        });
+        $('body').append(notification);
+        setTimeout(function() {
+          notification.fadeOut();
+        }, 3000);
+      }
+
+      function checkDuplicateId(id) {
+        const ids = dataTable.columns(0).data()[0];
+        return ids.includes(id);
+      }
+
+      fetch('http://localhost:3000/vendors')
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(vendor => {
+            dataTable.row.add([
+              vendor.id,
+              vendor.name,
+              vendor.paket,
+              vendor.deskripsi,
+              '<button class="editBtn">Edit</button> <button class="deleteBtn">Delete</button>'
+            ]).draw();
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+
+      $('#vendorForm').submit(function(event) {
+        event.preventDefault();
+
+        if (!this.checkValidity()) {
+          this.reportValidity();
+          return;
+        }
+
+        const vendorId = $('#vendorId').val();
+        const vendorName = $('#vendorName').val();
+        const vendorPaket = $('#vendorPaket').val();
+        const vendorDeskripsi = $('#vendorDeskripsi').val();
+        const formMode = $(this).data('mode');
+
+        if (formMode === 'add') {
+          if (checkDuplicateId(vendorId)) {
+            showErrorNotification('ID already exists!');
+            return;
+          }
+
+          dataTable.row.add([
+            vendorId,
+            vendorName,
+            vendorPaket,
+            vendorDeskripsi,
+            '<button class="editBtn">Edit</button> <button class="deleteBtn">Delete</button>'
+          ]).draw();
+
+          this.reset();
+
+          fetch('http://localhost:3000/vendors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: vendorId,
+              name: vendorName,
+              paket: vendorPaket,
+              deskripsi: vendorDeskripsi
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Vendor added:', data);
+            showSuccessNotification('Vendor added successfully!');
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+        } else if (formMode === 'edit') {
+          const row = dataTable.row('.selected');
+          const currentId = row.data()[0];
+          if (vendorId !== currentId && checkDuplicateId(vendorId)) {
+            showErrorNotification('ID already exists!');
+            return;
+          }
+
+          row.data([
+            vendorId,
+            vendorName,
+            vendorPaket,
+            vendorDeskripsi,
+            '<button class="editBtn">Edit</button> <button class="deleteBtn">Delete</button>'
+          ]).draw();
+
+          this.reset();
+
+          const vendorIdToUpdate = row.data()[0];
+          fetch(`http://localhost:3000/vendors/${vendorIdToUpdate}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: vendorId,
+              name: vendorName,
+              paket: vendorPaket,
+              deskripsi: vendorDeskripsi
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Vendor updated:', data);
+            showSuccessNotification('Vendor updated successfully!');
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+        }
+      });
+
+      $('#vendorTable').on('click', '.editBtn', function() {
+        const row = $(this).closest('tr');
+        const data = dataTable.row(row).data();
+
+        $('#vendorId').val(data[0]);
+        $('#vendorName').val(data[1]);
+        $('#vendorPaket').val(data[2]);
+        $('#vendorDeskripsi').val(data[3]);
+
+        $('#submitBtn').val('Update Vendor');
+        $('#cancelBtn').show();
+
+        $('#vendorForm').data('mode', 'edit');
+        row.addClass('selected');
+      });
+
+      $('#vendorTable').on('click', '.deleteBtn', function() {
+        const row = $(this).closest('tr');
+        const data = dataTable.row(row).data();
+        const vendorId = data[0];
+
+        fetch(`http://localhost:3000/vendors/${vendorId}`, {
+          method: 'DELETE'
+        })
+        .then(response => {
+          if (response.ok) {
+            dataTable.row(row).remove().draw();
+            console.log('Vendor deleted:', vendorId);
+            showSuccessNotification('Vendor deleted successfully!');
+          } else {
+            throw new Error('Error deleting vendor');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showErrorNotification('Failed to delete vendor!');
+        });
+      });
+
+      $('#cancelBtn').click(function() {
+        $('#vendorForm').trigger('reset');
+        $('#submitBtn').val('Add Vendor');
+        $(this).hide();
+        $('#vendorForm').data('mode', 'add');
+        $('#vendorTable tr.selected').removeClass('selected');
+      });
+    });
+  </script>
+</body>
+</html>
